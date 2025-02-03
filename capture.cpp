@@ -17,7 +17,7 @@
 
 using json = nlohmann::json;
 
-const std::string LOG_FILENAME = "traffic_log.json";
+const std::string LOG_FILENAME = "my-app/public/traffic_log.json"; 
 const size_t MAX_LOG_ENTRIES = 1000; // Максимальное число записей в логе
 const size_t MAX_LOG_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -53,11 +53,19 @@ json loadExistingLogs() {
 }
 
 void saveLogs(const json& logs) {
+    std::filesystem::create_directories("my-app/public/"); 
+    std::ofstream log_file(LOG_FILENAME, std::ios::trunc);
+
+    if (!log_file.is_open()) {
+        std::cerr << "Ошибка: не удалось открыть log-файл!" << std::endl;
+        return;
+    }
+
     json trimmedLogs = logs;
     if (logs.size() > MAX_LOG_ENTRIES) {
         trimmedLogs = json(logs.end() - MAX_LOG_ENTRIES, logs.end());
     }
-    std::ofstream log_file(LOG_FILENAME, std::ios::trunc);
+
     log_file << trimmedLogs.dump(4);
 }
 
@@ -103,8 +111,8 @@ bool analyzeHTTPPayload(const std::string& payload) {
 }
 
 void packetHandler(u_char* userData, const struct pcap_pkthdr* pkthdr, const u_char* packet) {
+    std::cout << "[DEBUG] Перехвачен пакет: длина = " << pkthdr->len << " байт" << std::endl;
     struct ip* ipHeader = (struct ip*)(packet + 14);
-    
     char src_ip[INET_ADDRSTRLEN];
     char dest_ip[INET_ADDRSTRLEN];
 
@@ -164,3 +172,6 @@ void startPacketCapture() {
     pcap_close(handle);
     pcap_freealldevs(alldevs);
 }
+
+
+
